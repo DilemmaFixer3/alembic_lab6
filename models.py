@@ -7,18 +7,19 @@ from datetime import datetime
 from main import Base
 
 
-class Passenger(Base):
+class User(Base):
     __tablename__ = 'passenger'
     id = Column(Integer(), primary_key=True)
     firstName = Column(String(45), nullable=False)
     lastName = Column(String(45), nullable=False)
-    email = Column(String(45), nullable=False)
+    #email = Column(String(45), nullable=False)
     phone = Column(String(45), nullable=False)
     passwortNumber = Column(Integer(), nullable=False)
     passwortSeries = Column(String(5), nullable=False)
     password = Column(Integer, nullable=False)  # додано для ідентифікації
     username = Column(String(45), nullable=False)  # додано для ідентифікації
-    address = Column(String(45), nullable=False)
+    #address = Column(String(45), nullable=False)
+    Role = Column(String(45), nullable=False)
     RentalService_serviceId = Column(Integer, ForeignKey('rentalService.serviceId'))
     rentalService = relationship("RentalService", secondary=type, backref="passenger")
 
@@ -54,15 +55,15 @@ class Car(Base):
     yearProduction = Column(Integer(), nullable=False)
     fuelConsumption = Column(Integer(), nullable=False)
     seatsNumber = Column(Integer(), nullable=False)
-    status = Column(String(45), nullable=False)
-    Reservation_reservId = Column(Integer, ForeignKey('reservation.reservId'))
-    reservation = relationship("Reservation", secondary=type, backref="car")
+    status = Column(String(45), nullable=False)  ##booked=1 free=0
+    #Reservation_reservId = Column(Integer, ForeignKey('reservation.reservId'))
+    #reservation = relationship("Reservation", secondary=type, backref="car")
     RentalService_serviceId = Column(Integer, ForeignKey('rentalService.serviceId'))
     rentalService = relationship("RentalService", secondary=type, backref="car")
 
 
-class Reservation(Base):
-    __tablename__ = 'reservation'
-    reservId = Column(Integer(), primary_key=True)
-    startTime = Column(DateTime(), default=datetime)
-    endTime = Column(DateTime(), default=datetime)
+# class Reservation(Base):
+#     __tablename__ = 'reservation'
+#     reservId = Column(Integer(), primary_key=True)
+#     startTime = Column(DateTime(), default=datetime)
+#     endTime = Column(DateTime(), default=datetime)

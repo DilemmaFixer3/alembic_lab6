@@ -43,8 +43,8 @@ auth = HTTPBasicAuth()
 @auth.verify_password      #автентифікація пасажира
 def verify_password(username, password):
     try:
-        user = s.query(Passenger).filter(and_(Passenger.username == username,
-                                         Passenger.password == password)).first() is not None
+        user = s.query(User).filter(and_(User.username == username,
+                                         User.password == password)).first() is not None
         if user:
             return username
     except:
@@ -52,7 +52,7 @@ def verify_password(username, password):
 
 @auth.get_user_roles
 def get_user_roles(username):
-    user = s.query(Passenger).filter(Passenger.username == username).first()
+    user = s.query(User).filter(User.username == username).first()
     return user.Role
 
 # для відловлення помилок при автентифікації
@@ -78,7 +78,7 @@ class CarSchema(ma.Schema):
                   'fuelConsumption', 'seatsNumber', 'status', 'RentalService_serviceId')
 
 Car_schema = CarSchema(many=False)
-Car_schema = CarSchema(many=True)
+Cars_schema = CarSchema(many=True)
 
 
 class RentalServiceSchema(ma.Schema):
@@ -88,7 +88,7 @@ class RentalServiceSchema(ma.Schema):
 
 
 RentalService_schema = RentalServiceSchema(many=False)
-RentalService_schema = RentalServiceSchema(many=True)
+RentalServices_schema = RentalServiceSchema(many=True)
 
 #Формування відповіді на запити(лінки)
 #Отримати інформацію про машину по ID
@@ -133,12 +133,274 @@ def addCar():
     except Exception as e:
         return jsonify({"Error": "Invalid Request, please try again."})
 
+
+#редагування машини по ID
+@app.route("/Car/<int:carId>", methods=["PUT"])
+@auth.login_required(role=['SuperUser'])
+def updateCar(carId):
+    car = s.query(Car).filter(Car.carId == carId).one()
+    Username = car.Username
+    current = auth.username()
+    if current != Username:
+        return Response(status=405, response='Access denied')
+    try:
+        carId = request.json['carId']
+        brand = request.json['brand']
+        model = request.json['model']
+        maxSpeed = request.json['maxSpeed']
+        yearProduction = request.json['yearProduction']
+        fuelConsumption = request.json['fuelConsumption']
+        seatsNumber = request.json['seatsNumber']
+        status = request.json['status']
+        RentalService_serviceId = request.json['serviceId']
+
+        car.carId = carId
+        car.brand = brand
+        car.model = model
+        car.maxSpeed = maxSpeed
+        car.yearProduction = yearProduction
+        car.fuelConsumption = fuelConsumption
+        car.seatsNumber = seatsNumber
+        car.status = status
+        car.RentalService_serviceId = RentalService_serviceId
+
+        s.commit()
+
+    except Exception as e:
+        return jsonify({"Error": "Invalid Request, please try again."})
+
+    return Car_schema.jsonify(car)
+
+#видалення машини по ID
+@app.route("/car/<int:carId>", methods=["DELETE"])
+@auth.login_required(role=['SuperUser'])
+def deleteCarById(carId):
+    car = s.query(Car).filter(Car.carId == carId).one()
+    Username = Car.Username
+    current = auth.username()
+    if current != Username:
+        return Response(status=403, response='Access denied')
+    s.delete(car)
+    s.commit()
+    return jsonify({"Success": "Event deleted."})
+
+#видалення машин по ID сервісу
+@app.route("/Car/<int:RentalService_serviceId>", methods=["DELETE"])
+@auth.login_required(role=['SuperUser'])
+def deleteCarsByEventId(RentalService_serviceId):
+    event = s.query(RentalService).filter(RentalService.serviceId == RentalService_serviceId).one()
+    Username = event.Username
+    current = auth.username()
+    if current != Username:
+        return Response(status=403, response='Access denied')
+    cars = s.query(Car).filter(Car.RentalService_serviceId == RentalService_serviceId).all()
+
+    for car in cars:
+        s.delete(car)
+
+    s.commit()
+    return jsonify({"Success": "Cars deleted."})
+
+#додавання нового сервісу
+@app.route("/RentalService", methods=["POST"])
+@auth.login_required(role=['SuperUser'])
+def addRentalService():
+    try:
+        serviceId = request.json['serviceId']
+        name = request.json['name']
+        email = request.json['name']
+        phone = request.json['phone']
+        websiteLink = request.json['websiteLink']
+        address = request.json['address']
+
+        new_service = RentalService(serviceId=serviceId,
+                        name = name, email=email,
+                        phone=phone, websiteLink=websiteLink,
+                        address = address, Username=auth.username())
+
+        s.add(new_service)
+        s.commit()
+        return RentalService_schema.jsonify(new_service)
+
+    except Exception as e:
+        return jsonify({"Error": "Invalid Request, please try again."})
+
+#видалення сервісу по ID
+@app.route("/RentalService/<int:serviceId>", methods=["DELETE"])
+@auth.login_required(role=['SuperUser'])
+def deleteRentalServiceById(serviceId):
+    service = s.query(RentalService).filter(RentalService.serviceId == serviceId).one()
+    Username = RentalService.Username
+    current = auth.username()
+    if current != Username:
+        return Response(status=403, response='Access denied')
+    s.delete(service)
+    s.commit()
+    return jsonify({"Success": "Event deleted."})
+
+#редагувати сервіс по ID
+@app.route("/RentalService/<int:serviceId>", methods=["PUT"])
+@auth.login_required(role=['SuperUser'])
+def updateServiceById(serviceId):
+    service = s.query(RentalService).filter(RentalService.serviceId == serviceId).one()
+    Username = RentalService.Username
+    current = auth.username()
+    if current != Username:
+        return Response(status=405, response='Access denied')
+    try:
+
+        serviceId = request.json['serviceId']
+        name = request.json['name']
+        email = request.json['name']
+        phone = request.json['phone']
+        websiteLink = request.json['websiteLink']
+        address = request.json['address']
+
+
+        service.serviceId = serviceId
+        service.name = name
+        service.email = email
+        service.phone = phone
+        service.websiteLink = websiteLink
+        service.address = address
+
+
+        s.commit()
+    except Exception as e:
+        return jsonify({"Error": "Invalid request, please try again."})
+
+    return RentalService_schema.jsonify(service)
+
+#Passenger and Admin--------------------------------------------
+
+class UserSchema(ma.Schema):
+    class Meta:
+        fields = ('id', 'firstName', 'lastName', 'phone', 'passwortNumber',
+                  'passwortSeries', 'password', 'username',
+                  'RentalService_serviceId', 'Role')
+
+
+User_schema = UserSchema(many=False)
+Users_schema = UserSchema(many=True)
+
+# отримати всі машини одного користувача
+@app.route("/Car/get-by-userid/<string:username>", methods=["GET"])
+@auth.login_required(role=['User'])
+def getUsersCars(username):
+    current = auth.username()
+    if current != username:
+        return Response(status=403, response='Access denied')
+    cars = s.query(Car).filter(Car.username == username).all()
+
+    return Cars_schema.jsonify(cars)
+
+#додати нового користувача (клієнт)
+@app.route("/User", methods=["POST"])
+def addUser():
+    try:
+        id = request.json['id']
+        firstName = request.json['firstName']
+        lastName = request.json['lastName']
+        phone = request.json['phone']
+        passwortNumber = request.json['passwortNumber']
+        passwortSeries = request.json['passwortSeries']
+        username = request.json['username']
+        password = request.json['password']
+        RentalService_serviceId = request.json['RentalService_serviceId']
+        # password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+        new_user = User(id=id, firstName=firstName, lastName=lastName,
+                        phone=phone, passwortNumber=passwortNumber,
+                        passwortSeries=passwortSeries,
+                        username = username,
+                        password=password, Role="User",
+                        RentalService_serviceId = RentalService_serviceId)
+
+        s.add(new_user)
+        s.commit()
+        return User_schema.jsonify(new_user)
+
+    except Exception as e:
+        return jsonify({"Error": "Invalid Request, please try again."})
+
+
+#додати нового користувача (адмін)
+@app.route("/Admin", methods=["POST"])
+def addAdmin():
+    try:
+        id = request.json['id']
+        firstName = request.json['firstName']
+        lastName = request.json['lastName']
+        phone = request.json['phone']
+        passwortNumber = request.json['passwortNumber']
+        passwortSeries = request.json['passwortSeries']
+        username = request.json['username']
+        password = request.json['password']
+        RentalService_serviceId = request.json['RentalService_serviceId']
+        # password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+        new_user = User(id=id, firstName=firstName, lastName=lastName,
+                        phone=phone, passwortNumber=passwortNumber,
+                        passwortSeries=passwortSeries,
+                        username = username,
+                        password=password, Role="Admin",
+                        RentalService_serviceId = RentalService_serviceId)
+
+        s.add(new_user)
+        s.commit()
+        return User_schema.jsonify(new_user)
+
+    except Exception as e:
+        return jsonify({"Error": "Invalid Request, please try again."})
+
+#орендування машини по ID
+@app.route("/User/Reservation", methods=["PUT"])
+@auth.login_required(role=['User'])
+def ReservationCarById():
+
+    try:
+
+        carId = request.json['carId']
+        username = request.json['username']
+        status = request.json['status']
+        current = auth.username()
+        if current != username:
+            return Response(status=403, response='Access denied')
+        car = s.query(Car).filter(Car.carId == carId).one()
+
+        if (car.status==1):
+            return handle_403_error(1)
+
+        if (car.status==0):
+            if car.username != username:
+                return handle_403_error(1)
+
+            if status == 0:
+                car.username = None
+
+            car.status = status
+
+        else:
+            if status == 0:
+                return Car_schema.jsonify(car)
+
+            car.status = status
+            car.username = username
+
+        s.commit()
+    except Exception as e:
+        return jsonify({"Error": "Invalid request, please try again."})
+
+    return Car_schema.jsonify(car)
+
+
+
 # class Passenger(Base):
 #     __tablename__ = 'passenger'
 #     id = Column(Integer(), primary_key=True)
 #     firstName = Column(String(45), nullable=False)
 #     lastName = Column(String(45), nullable=False)
-#     email = Column(String(45), nullable=False)
+#     #email = Column(String(45), nullable=False)
 #     phone = Column(String(45), nullable=False)
 #     passwortNumber = Column(Integer(), nullable=False)
 #     passwortSeries = Column(String(5), nullable=False)
@@ -179,13 +441,13 @@ def addCar():
 #     fuelConsumption = Column(Integer(), nullable=False)
 #     seatsNumber = Column(Integer(), nullable=False)
 #     status = Column(String(45), nullable=False)
-#     Reservation_reservId = Column(Integer, ForeignKey('reservation.reservId'))
-#     reservation = relationship("Reservation", secondary=type, backref="car")
+#     #Reservation_reservId = Column(Integer, ForeignKey('reservation.reservId'))
+#     #reservation = relationship("Reservation", secondary=type, backref="car")
 #     RentalService_serviceId = Column(Integer, ForeignKey('rentalService.serviceId'))
 #     rentalService = relationship("RentalService", secondary=type, backref="car")
 #
 #
-# class Reservation(Base):
+# ####class Reservation(Base):
 #     __tablename__ = 'reservation'
 #     reservId = Column(Integer(), primary_key=True)
 #     startTime = Column(DateTime(), default=datetime)
