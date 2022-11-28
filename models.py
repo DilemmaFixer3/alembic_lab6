@@ -7,44 +7,62 @@ from datetime import datetime
 from main import Base
 
 
-class User(Base):
-    __tablename__ = 'user'
-    iduser = Column(Integer(), primary_key=True)
-    username = Column(String(45), nullable=False)
+class Passenger(Base):
+    __tablename__ = 'passenger'
+    id = Column(Integer(), primary_key=True)
+    firstName = Column(String(45), nullable=False)
+    lastName = Column(String(45), nullable=False)
     email = Column(String(45), nullable=False)
-    phone = Column(Integer(), nullable=False)
-    password = Column(String(45), nullable=False)
-    userStatus = Column(String(45), nullable=False)
-    age = Column(Integer(), nullable=True)
-    playlist_Id = Column(Integer, ForeignKey('create_playlist.idCreating_playlist'))
-    playlist = relationship("Create_playlist", secondary=type, backref="user")
+    phone = Column(String(45), nullable=False)
+    passwortNumber = Column(Integer(), nullable=False)
+    passwortSeries = Column(String(5), nullable=False)
+    password = Column(Integer, nullable=False)  # додано для ідентифікації
+    username = Column(String(45), nullable=False)  # додано для ідентифікації
+    address = Column(String(45), nullable=False)
+    RentalService_serviceId = Column(Integer, ForeignKey('rentalService.serviceId'))
+    rentalService = relationship("RentalService", secondary=type, backref="passenger")
+
+class Administrator(Base):
+    __tablename__ = 'administrator'
+    idAdministrator = Column(Integer(), primary_key=True)
+    firstName = Column(String(45), nullable=False)
+    lastName = Column(String(45), nullable=False)
+    age = Column(Integer(), nullable=False)
+    experience = Column(Integer(), nullable=False)
+    email = Column(String(45), nullable=False)
+    phone = Column(String(45), nullable=False)
+    RentalService_serviceId = Column(Integer, ForeignKey('rentalService.serviceId'))
+    rentalService = relationship("RentalService", secondary=type, backref="administrator")
 
 
-class Type(Base):
-    __tablename__ = 'type'
-    idtype_playlist = Column(Integer(), primary_key=True)
-    type = Column(String(10), nullable=False)
-    user_id = Column(Integer(), ForeignKey("user.iduser"))
-    playlist_id = Column(Integer(), ForeignKey("create_playlist.idCreating_playlist"))
-
-
-playlist_has_song = Table('playlist_has_song', Base.metadata,
-                          Column('Creat_playlist_id', Integer(), ForeignKey("create_playlist.idCreating_playlist")),
-                          Column('song_id', Integer(), ForeignKey("song.idsong")))
-
-
-class Create_playlist(Base):
-    __tablename__ = 'create_playlist'
-    idCreating_playlist = Column(Integer(), primary_key=True)
+class RentalService(Base):
+    __tablename__ = 'rentalService'
+    serviceId = Column(Integer(), primary_key=True)
     name = Column(String(45), nullable=False)
-    date_created = Column(DateTime(), default=datetime.now)
+    email = Column(String(45), nullable=False)
+    phone = Column(String(45), nullable=False)
+    websiteLink = Column(String(45), nullable=False)
+    address = Column(String(45), nullable=False)
 
 
-class Song(Base):
-    __tablename__ = 'song'
-    idsong = Column(Integer(), primary_key=True)
-    name = Column(String(45), nullable=False)
-    artist = Column(String(45), nullable=False)
-    playlistId = Column(Integer, ForeignKey('create_playlist.idCreating_playlist'))
-    playlist = relationship("Create_playlist", secondary=playlist_has_song, backref="song")
+class Car(Base):
+    __tablename__ = 'car'
+    carId = Column(Integer(), primary_key=True)
+    brand = Column(String(45), nullable=False)
+    model = Column(String(45), nullable=False)
+    maxSpeed = Column(Integer(), nullable=False)
+    yearProduction = Column(Integer(), nullable=False)
+    fuelConsumption = Column(Integer(), nullable=False)
+    seatsNumber = Column(Integer(), nullable=False)
+    status = Column(String(45), nullable=False)
+    Reservation_reservId = Column(Integer, ForeignKey('reservation.reservId'))
+    reservation = relationship("Reservation", secondary=type, backref="car")
+    RentalService_serviceId = Column(Integer, ForeignKey('rentalService.serviceId'))
+    rentalService = relationship("RentalService", secondary=type, backref="car")
 
+
+class Reservation(Base):
+    __tablename__ = 'reservation'
+    reservId = Column(Integer(), primary_key=True)
+    startTime = Column(DateTime(), default=datetime)
+    endTime = Column(DateTime(), default=datetime)
