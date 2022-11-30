@@ -393,7 +393,20 @@ def ReservationCarById():
 
     return Car_schema.jsonify(car)
 
+# login
+@app.route("/User/login", methods=["POST"])
+def Login():
+    username = request.json['username']
+    password = request.json['password']
 
+    user = s.query(User).filter(User.username == username).one()
+    if bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
+        return "You logged in successfully!!!"
+
+    return handle_401_error(1)
+
+
+if __name__ == "__main__" : app.run()
 
 # class Passenger(Base):
 #     __tablename__ = 'passenger'
